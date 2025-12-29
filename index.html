@@ -1,61 +1,3 @@
-
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Hot Wheels – Mi Colección</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <h1>Hot Wheels – Mi Colección</h1>
-  <div id="content"></div>
-  <button onclick="addManual()">Agregar Auto</button>
-
-  <!-- 🔑 Firebase SDK y configuración -->
-  <script type="module">
-    // Importar Firebase desde la CDN
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot } 
-      from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-
-    // Configuración de tu proyecto (copiada de Firebase Console)
-    const firebaseConfig = {
-      apiKey: "AIzaSyBVXcElTOWxjmDDupN5iZR9M29ZzlT_w2U",
-      authDomain: "hotwheels-coleccion.firebaseapp.com",
-      projectId: "hotwheels-coleccion",
-      storageBucket: "hotwheels-coleccion.appspot.com", <!-- corregido -->
-      messagingSenderId: "498868907702",
-      appId: "1:498868907702:web:16d812b8898377f92cc017"
-    };
-
-    // Inicializar Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // Colección en Firestore
-    const carsCol = collection(db, "cars");
-
-    // Escuchar cambios en tiempo real
-    onSnapshot(carsCol, (snapshot) => {
-      const cars = snapshot.docs.map(doc => doc.data());
-      document.getElementById("content").innerHTML = 
-        cars.map(c => `<p>${c.name} (${c.model}) - ${c.collection_type}</p>`).join("");
-    });
-
-    // Función para agregar un auto
-    window.addManual = async function() {
-      const samples = [
-        {name:"Ford Mustang", model:"Muscle Series", collection_type:"in_box"},
-        {name:"Nissan Skyline", model:"JDM", collection_type:"no_box"},
-        {name:"Porsche 911", model:"Exotics", collection_type:"wishlist"}
-      ];
-      const car = samples[Math.floor(Math.random()*samples.length)];
-      await addDoc(carsCol, car);
-    }
-  </script>
-</body>
-</html>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -249,6 +191,15 @@ body{margin:0;background:var(--bg);color:var(--dark)}
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, addDoc } from "firebase/firestore";
 
+// Mostrar mensaje básico inmediatamente
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('Página cargada, inicializando...');
+  const content = document.getElementById('content');
+  if (content) {
+    content.innerHTML = '<p style="text-align:center; padding:20px;">Cargando aplicación...</p>';
+  }
+});
+
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBVXcElTOWxjmDDupN5iZR9M29ZzlT_w2U",
@@ -274,11 +225,13 @@ async function loadCars() {
   try {
     const querySnapshot = await getDocs(collection(db, 'cars'));
     cars = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    console.log('Carros cargados:', cars);
     render();
   } catch (error) {
     console.error('Error cargando carros:', error);
     // Fallback a localStorage si falla
     cars = JSON.parse(localStorage.getItem('hotwheels_cars')) || [];
+    console.log('Fallback a localStorage:', cars);
     render();
   }
 }
@@ -492,6 +445,16 @@ function hideDetails() {
   document.getElementById('details-overlay').style.display = 'none';
   document.getElementById('details').style.display = 'none';
 }
+
+// Exponer funciones al scope global para que los onclick funcionen
+window.showForm = showForm;
+window.hideForm = hideForm;
+window.addCarFromForm = addCarFromForm;
+window.previewImage = previewImage;
+window.showCarDetails = showCarDetails;
+window.hideDetails = hideDetails;
+window.setView = setView;
+window.setStatsCategory = setStatsCategory;
 
 loadCars()
 </script>
