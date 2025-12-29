@@ -1,442 +1,108 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Hot Wheels – Mi Colección</title>
-
-<style>
-:root {
-  --bg:#f6f8fb;--card:#fff;--primary:#6b7cff;
-  --dark:#1f2937;--muted:#6b7280;--radius:18px
-}
-*{box-sizing:border-box;font-family:Inter,system-ui}
-body{margin:0;background:var(--bg);color:var(--dark)}
-.container{max-width:1100px;margin:auto;padding:24px}
-
-/* HEADER */
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}
-.header-left{display:flex;gap:14px;align-items:center}
-.logo{width:48px;height:48px;background:linear-gradient(135deg,#ff6a00,#ff2d55);border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px}
-.header-title h1{margin:0;font-size:22px}
-.header-title span{font-size:14px;color:var(--muted)}
-.header-buttons button{padding:10px 16px;border-radius:14px;border:none;font-weight:600;cursor:pointer}
-.btn-primary{background:linear-gradient(135deg,#4f7cff,#8a5cff);color:#fff}
-
-/* STATS */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:25px}
-.stat-card{padding:22px;border-radius:var(--radius);color:#fff}
-.stat-card h2{margin:0;font-size:32px}
-.stat-card span{font-size:14px;opacity:.9}
-.total{background:linear-gradient(135deg,#374151,#111827)}
-.inbox{background:linear-gradient(135deg,#2fbf8f,#2c8f6f)}
-.nobox{background:linear-gradient(135deg,#f59e0b,#ea580c)}
-.wishlist{background:linear-gradient(135deg,#ec4899,#db2777)}
-
-/* SEARCH */
-.search{background:#fff;border-radius:var(--radius);padding:14px 18px;border:1px solid #e5e7eb;margin-bottom:20px}
-.search input{width:100%;border:none;outline:none;font-size:15px}
-
-/* TABS */
-.tabs{background:#fff;border-radius:var(--radius);padding:8px;display:flex;gap:8px;border:1px solid #e5e7eb;margin-bottom:25px}
-.tab{flex:1;padding:10px;border-radius:14px;border:none;cursor:pointer;background:transparent;font-weight:600;color:var(--muted)}
-.tab.active{background:#111827;color:#fff}
-
-/* LIST */
-.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
-.card{background:#fff;border-radius:16px;padding:14px;border:1px solid #e5e7eb}
-.card h4{margin:0}
-.card small{color:var(--muted)}
-
-/* EMPTY */
-.empty{text-align:center;padding:60px}
-.empty-icon{width:90px;height:90px;border-radius:50%;background:#eef2ff;display:flex;align-items:center;justify-content:center;font-size:36px;margin:auto;margin-bottom:20px}
-
-@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
-</style>
+  <meta charset="UTF-8">
+  <title>Hot Wheels – Mi Colección</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .car { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+    button { margin-right: 5px; }
+    form { margin-top: 10px; }
+    input, select { margin: 5px; }
+  </style>
 </head>
-
 <body>
-<div class="container">
+  <h1>Hot Wheels – Mi Colección</h1>
+  <div id="content"></div>
+  <button onclick="addManual()">Agregar Auto de Ejemplo</button>
 
-<!-- HEADER -->
-<div class="header">
-  <div class="header-left">
-    <div class="logo">🔥</div>
-    <div class="header-title">
-      <h1>Hot Wheels</h1>
-      <span>Mi Colección</span>
-    </div>
-  </div>
-  <div class="header-buttons">
-    <button class="btn-primary" onclick="showForm()">Agregar Carro</button>
-  </div>
-</div>
+  <!-- 🔑 Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc } 
+      from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-<!-- FORM -->
-<div id="form" style="display:none; background:#fff; border-radius:18px; padding:20px; border:1px solid #e5e7eb; margin-bottom:30px;">
-  <h3>Agregar Carro</h3>
-  <form onsubmit="addCarFromForm(); return false;">
-    <div style="margin-bottom:10px;">
-      <label>Nombre *</label><br>
-      <input type="text" id="name" required style="width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px;">
-    </div>
-    <div style="margin-bottom:10px;">
-      <label>Año</label><br>
-      <input type="number" id="year" style="width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px;">
-    </div>
-    <div style="margin-bottom:10px;">
-      <label>Colección Hot Wheels</label><br>
-      <input type="text" id="hw_collection" style="width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px;">
-    </div>
-    <div style="margin-bottom:10px;">
-      <label>Número de colección</label><br>
-      <input type="text" id="hw_number" style="width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px;">
-    </div>
-    <div style="margin-bottom:10px;">
-      <label>Color</label><br>
-      <input type="text" id="color" style="width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px;">
-    </div>
-    <div style="margin-bottom:10px;">
-      <label>Foto</label><br>
-      <input type="file" id="photo" accept="image/*" onchange="previewImage(this)" style="width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px;">
-    </div>
-    <div style="margin-bottom:10px;">
-      <label>Tipo de colección</label><br>
-      <select id="collection_type" style="width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px;">
-        <option value="in_box">En caja</option>
-        <option value="no_box">Sin caja</option>
-        <option value="wishlist">Wishlist</option>
-      </select>
-    </div>
-    <div style="margin-bottom:10px;">
-      <label>Tipo de carro 🚗</label><br>
-      <select id="car_type" style="width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px;">
-        <option value="deportivo">Deportivo</option>
-        <option value="exotico">Exótico</option>
-        <option value="pickup">Pickup</option>
-        <option value="suv">SUV</option>
-        <option value="clasico">Clásico</option>
-        <option value="off_road">Off Road</option>
-        <option value="tunner">Tunner</option>
-        <option value="van">Van</option>
-        <option value="cars">Cars</option>
-        <option value="bob_esponja">Bob Esponja</option>
-        <option value="otro">Otro</option>
-      </select>
-    </div>
-    <button type="submit" class="btn-primary" style="margin-right:10px;">Guardar</button>
-    <button type="button" onclick="hideForm()">Cancelar</button>
-  </form>
-</div>
-
-<!-- DETAILS -->
-<div id="details-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999;" onclick="hideDetails()"></div>
-<div id="details" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; border-radius:18px; padding:20px; border:1px solid #e5e7eb; z-index:1000; max-width:90%; max-height:90%; overflow:auto; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-  <h3 id="details-title"></h3>
-  <img id="details-img" style="width:100%; max-width:300px; height:auto; border-radius:8px; margin-bottom:10px;">
-  <p><strong>Nombre:</strong> <span id="details-name"></span></p>
-  <p><strong>Año:</strong> <span id="details-year"></span></p>
-  <p><strong>Colección Hot Wheels:</strong> <span id="details-hw_collection"></span></p>
-  <p><strong>Número de colección:</strong> <span id="details-hw_number"></span></p>
-  <p><strong>Color:</strong> <span id="details-color"></span></p>
-  <p><strong>Tipo de colección:</strong> <span id="details-collection_type"></span></p>
-  <p><strong>Tipo de carro:</strong> <span id="details-car_type"></span></p>
-  <button onclick="hideDetails()" style="margin-top:10px;">Cerrar</button>
-</div>
-
-<!-- STATS -->
-<div class="stats">
-  <div class="stat-card total"><h2 id="s-total">0</h2><span>Total</span></div>
-  <div class="stat-card inbox"><h2 id="s-inbox">0</h2><span>En Caja</span></div>
-  <div class="stat-card nobox"><h2 id="s-nobox">0</h2><span>Sin Caja</span></div>
-  <div class="stat-card wishlist"><h2 id="s-wishlist">0</h2><span>Wishlist</span></div>
-</div>
-
-<h3 style="text-align:center; margin:20px 0;">Estadísticas</h3>
-
-<!-- STATS TABS -->
-<div class="tabs" style="margin-bottom:20px;">
-  <button class="tab active" onclick="setStatsCategory('car_in_box',this)">Tipo En Caja</button>
-  <button class="tab" onclick="setStatsCategory('car_no_box',this)">Tipo Sin Caja</button>
-  <button class="tab" onclick="setStatsCategory('col_in_box',this)">Colección En Caja</button>
-  <button class="tab" onclick="setStatsCategory('col_no_box',this)">Colección Sin Caja</button>
-</div>
-
-<!-- PIE CHART -->
-<div id="pie-chart" style="text-align:center; margin-bottom:30px;"></div>
-
-<!-- HIDDEN DETAILED STATS -->
-<div id="detailed-stats" style="display:none;"></div>
-
-<!-- SEARCH -->
-<div class="search">
-  <input placeholder="Buscar por nombre o modelo…" oninput="render()">
-</div>
-
-<!-- TABS -->
-<div class="tabs">
-  <button class="tab active" onclick="setView('all',this)">Todos</button>
-  <button class="tab" onclick="setView('in_box',this)">En Caja</button>
-  <button class="tab" onclick="setView('no_box',this)">Sin Caja</button>
-  <button class="tab" onclick="setView('wishlist',this)">Wishlist</button>
-</div>
-
-<!-- CONTENT -->
-<div id="content"></div>
-
-</div>
-
-<script type="module">
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, addDoc } from "firebase/firestore";
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyBVXcElTOWxjmDDupN5iZR9M29ZzlT_w2U",
-  authDomain: "hotwheels-coleccion.firebaseapp.com",
-  projectId: "hotwheels-coleccion",
-  storageBucket: "hotwheels-coleccion.firebasestorage.app",
-  messagingSenderId: "498868907702",
-  appId: "1:498868907702:web:16d812b8898377f92cc017"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// Variables globales
-let cars = []
-let view = 'all'
-let statsCategory = 'car_in_box'
-let photoData = ''
-
-// Función para cargar carros desde Firestore
-async function loadCars() {
-  try {
-    const querySnapshot = await getDocs(collection(db, 'cars'));
-    cars = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    render();
-  } catch (error) {
-    console.error('Error cargando carros:', error);
-    // Fallback a localStorage si falla
-    cars = JSON.parse(localStorage.getItem('hotwheels_cars')) || [];
-    render();
-  }
-}
-
-// Función para guardar carro en Firestore
-async function saveCar(car) {
-  try {
-    const docRef = await addDoc(collection(db, 'cars'), car);
-    car.id = docRef.id;
-    cars.push(car);
-    render();
-  } catch (error) {
-    console.error('Error guardando carro:', error);
-    // Fallback a localStorage
-    cars.push(car);
-    localStorage.setItem('hotwheels_cars', JSON.stringify(cars));
-    render();
-  }
-}
-
-function render(){
-  updateStats()
-  updatePieChart()
-  const content = document.getElementById('content')
-  const search = document.querySelector('.search input').value.toLowerCase()
-
-  let filtered = cars.filter(c =>
-    (view === 'all' || c.collection_type === view) &&
-    (c.name.toLowerCase().includes(search) || c.collection_type.toLowerCase().includes(search))
-  )
-
-  if(filtered.length === 0){
-    content.innerHTML = `
-      <div class="empty">
-        <div class="empty-icon">🚗</div>
-        <h3>Sin autos todavía</h3>
-        <p>Agrega tu primer Hot Wheels</p>
-      </div>`
-    return
-  }
-
-  content.innerHTML = `
-    <div class="list">
-      ${filtered.map(c=>`
-        <div class="card" onclick="showCarDetails('${c.id}')" style="cursor:pointer;">
-          <img src="${c.photo_url || 'https://via.placeholder.com/300x200?text=Hot+Wheels'}" style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:10px;">
-          <h4>${c.name}</h4>
-          <small>${c.collection_type.replace('_', ' ')}</small>
-          ${c.hw_collection ? `<small>Colección: ${c.hw_collection} #${c.hw_number}</small>` : ''}
-        </div>
-      `).join('')}
-    </div>`
-}
-
-function updateStats(){
-  s('total',cars.length)
-  s('inbox',cars.filter(c=>c.collection_type==='in_box').length)
-  s('nobox',cars.filter(c=>c.collection_type==='no_box').length)
-  s('wishlist',cars.filter(c=>c.collection_type==='wishlist').length)
-}
-
-function updatePieChart(){
-  let data = {}
-  if (statsCategory === 'car_in_box') {
-    cars.forEach(c => {
-      if (c.collection_type === 'in_box') {
-        data[c.car_type] = (data[c.car_type] || 0) + 1
-      }
-    })
-  } else if (statsCategory === 'car_no_box') {
-    cars.forEach(c => {
-      if (c.collection_type === 'no_box') {
-        data[c.car_type] = (data[c.car_type] || 0) + 1
-      }
-    })
-  } else if (statsCategory === 'col_in_box') {
-    cars.forEach(c => {
-      if (c.hw_collection && c.collection_type === 'in_box') {
-        data[c.hw_collection] = (data[c.hw_collection] || 0) + 1
-      }
-    })
-  } else if (statsCategory === 'col_no_box') {
-    cars.forEach(c => {
-      if (c.hw_collection && c.collection_type === 'no_box') {
-        data[c.hw_collection] = (data[c.hw_collection] || 0) + 1
-      }
-    })
-  }
-
-  const entries = Object.entries(data)
-  if (entries.length === 0) {
-    document.getElementById('pie-chart').innerHTML = '<p>No hay datos para esta categoría</p>'
-    return
-  }
-
-  // Tabla
-  let table = '<table style="width:100%; border-collapse:collapse; margin:0 auto 20px; max-width:400px;"><tr><th style="border:1px solid #ddd; padding:8px;">Categoría</th><th style="border:1px solid #ddd; padding:8px;">Cantidad</th></tr>'
-  entries.forEach(([key, value]) => {
-    const escapedKey = key.replace(/'/g, '&#39;').replace(/"/g, '&quot;')
-    table += `<tr><td style="border:1px solid #ddd; padding:8px;">${escapedKey}</td><td style="border:1px solid #ddd; padding:8px;">${value}</td></tr>`
-  })
-  table += '</table>'
-
-  const total = entries.reduce((sum, [,v]) => sum + v, 0)
-  const colors = ['#ff6a00', '#4f7cff', '#2fbf8f', '#f59e0b', '#ec4899', '#8a5cff', '#ea580c', '#db2777']
-  let cumulative = 0
-  let svg = `<svg width="300" height="300" viewBox="0 0 100 100" style="margin:0 auto;">`
-  entries.forEach(([key, value], i) => {
-    const percentage = value / total
-    const startAngle = cumulative * 2 * Math.PI
-    const endAngle = (cumulative + percentage) * 2 * Math.PI
-    const largeArc = percentage > 0.5 ? 1 : 0
-    const x1 = 50 + 40 * Math.cos(startAngle)
-    const y1 = 50 + 40 * Math.sin(startAngle)
-    const x2 = 50 + 40 * Math.cos(endAngle)
-    const y2 = 50 + 40 * Math.sin(endAngle)
-    svg += `<path d="M50 50 L${x1} ${y1} A40 40 0 ${largeArc} 0 ${x2} ${y2} L50 50 Z" fill="${colors[i % colors.length]}"></path>`
-    cumulative += percentage
-  })
-  svg += '</svg>'
-
-  // Leyenda
-  let legend = '<div style="display:flex; flex-wrap:wrap; justify-content:center; margin-top:10px;">'
-  entries.forEach(([key, value], i) => {
-    const escapedKey = key.replace(/'/g, '&#39;').replace(/"/g, '&quot;')
-    legend += `<div style="margin:5px;"><span style="display:inline-block; width:15px; height:15px; background:${colors[i % colors.length]}; margin-right:5px;"></span>${escapedKey}: ${value}</div>`
-  })
-  legend += '</div>'
-
-  document.getElementById('pie-chart').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:flex-start;"><div style="flex:1; margin-right:20px;">${table}</div><div style="flex:1; text-align:center;">${svg}${legend}</div></div>`
-}
-function s(id,val){document.getElementById('s-'+id).textContent=val}
-
-function setView(f,btn){
-  view = f
-  document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'))
-  btn.classList.add('active')
-  render()
-}
-
-function setStatsCategory(cat, btn){
-  statsCategory = cat
-  document.querySelectorAll('.tabs')[1].querySelectorAll('.tab').forEach(t=>t.classList.remove('active'))
-  btn.classList.add('active')
-  updatePieChart()
-}
-
-function showForm(){
-  document.getElementById('form').style.display = 'block'
-}
-
-function hideForm(){
-  document.getElementById('form').style.display = 'none'
-}
-
-function addCarFromForm(){
-  const car = {
-    name: document.getElementById('name').value,
-    year: document.getElementById('year').value ? Number(document.getElementById('year').value) : null,
-    hw_collection: document.getElementById('hw_collection').value,
-    hw_number: document.getElementById('hw_number').value,
-    color: document.getElementById('color').value,
-    photo_url: photoData,
-    collection_type: document.getElementById('collection_type').value,
-    car_type: document.getElementById('car_type').value
-  }
-  if(car.name){
-    saveCar(car)
-    hideForm()
-    // Limpiar form
-    document.getElementById('name').value = ''
-    document.getElementById('year').value = ''
-    document.getElementById('hw_collection').value = ''
-    document.getElementById('hw_number').value = ''
-    document.getElementById('color').value = ''
-    photoData = ''
-    document.getElementById('photo').value = ''
-    document.getElementById('collection_type').value = 'in_box'
-    document.getElementById('car_type').value = 'deportivo'
-  }
-}
-
-function previewImage(input) {
-  if (input.files && input.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      photoData = e.target.result;
+    // ⚙️ Configuración de tu proyecto Firebase
+    const firebaseConfig = {
+      apiKey: "TU_API_KEY",
+      authDomain: "TU_AUTH_DOMAIN",
+      projectId: "TU_PROJECT_ID",
+      storageBucket: "TU_STORAGE_BUCKET",
+      messagingSenderId: "TU_SENDER_ID",
+      appId: "TU_APP_ID"
     };
-    reader.readAsDataURL(input.files[0]);
-  }
-}
 
-function showCarDetails(id) {
-  const car = cars.find(c => c.id === id);
-  if (car) {
-    document.getElementById('details-title').textContent = car.name;
-    document.getElementById('details-img').src = car.photo_url || 'https://via.placeholder.com/300x200?text=Hot+Wheels';
-    document.getElementById('details-name').textContent = car.name;
-    document.getElementById('details-year').textContent = car.year || 'N/A';
-    document.getElementById('details-hw_collection').textContent = car.hw_collection || 'N/A';
-    document.getElementById('details-hw_number').textContent = car.hw_number || 'N/A';
-    document.getElementById('details-color').textContent = car.color || 'N/A';
-    document.getElementById('details-collection_type').textContent = car.collection_type.replace('_', ' ');
-    document.getElementById('details-car_type').textContent = car.car_type;
-    document.getElementById('details-overlay').style.display = 'block';
-    document.getElementById('details').style.display = 'block';
-  }
-}
+    // Inicializar Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const carsCol = collection(db, "cars");
 
-function hideDetails() {
-  document.getElementById('details-overlay').style.display = 'none';
-  document.getElementById('details').style.display = 'none';
-}
+    // 🔹 Escuchar cambios en tiempo real
+    onSnapshot(carsCol, (snapshot) => {
+      const cars = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      renderCars(cars);
+    });
 
-loadCars()
-</script>
+    // 🔹 Agregar auto de ejemplo
+    window.addManual = async function() {
+      const samples = [
+        {name:"Ford Mustang", model:"Muscle Series", collection_type:"in_box"},
+        {name:"Nissan Skyline", model:"JDM", collection_type:"no_box"},
+        {name:"Porsche 911", model:"Exotics", collection_type:"wishlist"}
+      ];
+      const car = samples[Math.floor(Math.random()*samples.length)];
+      await addDoc(carsCol, car);
+    }
 
+    // 🔹 Eliminar auto con confirmación
+    window.deleteCar = async function(id) {
+      const seguro = confirm("¿Seguro que quieres eliminar este auto? Esta acción no se puede deshacer.");
+      if(seguro){
+        await deleteDoc(doc(db, "cars", id));
+      }
+    }
+
+    // 🔹 Editar auto (formulario)
+    window.showEditForm = function(id, car) {
+      const formHtml = `
+        <form onsubmit="submitEdit('${id}'); return false;">
+          <input type="text" id="edit-name-${id}" value="${car.name}" placeholder="Nombre">
+          <input type="text" id="edit-model-${id}" value="${car.model}" placeholder="Modelo">
+          <select id="edit-state-${id}">
+            <option value="in_box" ${car.collection_type==="in_box"?"selected":""}>En Caja</option>
+            <option value="no_box" ${car.collection_type==="no_box"?"selected":""}>Sin Caja</option>
+            <option value="wishlist" ${car.collection_type==="wishlist"?"selected":""}>Wishlist</option>
+          </select>
+          <button type="submit">Guardar</button>
+        </form>
+      `;
+      document.getElementById("edit-"+id).innerHTML = formHtml;
+    }
+
+    window.submitEdit = async function(id) {
+      const name = document.getElementById("edit-name-"+id).value;
+      const model = document.getElementById("edit-model-"+id).value;
+      const state = document.getElementById("edit-state-"+id).value;
+      await updateDoc(doc(db, "cars", id), {
+        name: name,
+        model: model,
+        collection_type: state
+      });
+      document.getElementById("edit-"+id).innerHTML = ""; // limpiar formulario
+    }
+
+    // 🔹 Renderizar autos en la página
+    function renderCars(cars) {
+      document.getElementById("content").innerHTML =
+        cars.map(c => `
+          <div class="car">
+            <strong>${c.name}</strong> (${c.model}) - <em>${c.collection_type}</em><br>
+            <button onclick="deleteCar('${c.id}')">Eliminar</button>
+            <button onclick="showEditForm('${c.id}', ${JSON.stringify(c)})">Editar</button>
+            <div id="edit-${c.id}"></div>
+          </div>
+        `).join("");
+    }
+  </script>
 </body>
 </html>
