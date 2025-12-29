@@ -1,8 +1,29 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBVXcElTOWxjmDDupN5iZR9M29ZzlT_w2U",
+  authDomain: "hotwheels-coleccion.firebaseapp.com",
+  projectId: "hotwheels-coleccion",
+  storageBucket: "hotwheels-coleccion.firebasestorage.app",
+  messagingSenderId: "498868907702",
+  appId: "1:498868907702:web:16d812b8898377f92cc017"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <title>Hot Wheels – Mi Colección</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
 
 <style>
 :root {
@@ -187,10 +208,55 @@ body{margin:0;background:var(--bg);color:var(--dark)}
 </div>
 
 <script>
-let cars = JSON.parse(localStorage.getItem('hotwheels_cars')) || []
+// Configuración de Firebase - REEMPLAZA CON TUS DATOS DE FIREBASE
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROYECTO.firebaseapp.com",
+  projectId: "TU_PROYECTO",
+  storageBucket: "TU_PROYECTO.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "TU_APP_ID"
+};
+
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Variables globales
+let cars = []
 let view = 'all'
 let statsCategory = 'car_in_box'
 let photoData = ''
+
+// Función para cargar carros desde Firestore
+async function loadCars() {
+  try {
+    const snapshot = await db.collection('cars').get();
+    cars = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    render();
+  } catch (error) {
+    console.error('Error cargando carros:', error);
+    // Fallback a localStorage si falla
+    cars = JSON.parse(localStorage.getItem('hotwheels_cars')) || [];
+    render();
+  }
+}
+
+// Función para guardar carro en Firestore
+async function saveCar(car) {
+  try {
+    const docRef = await db.collection('cars').add(car);
+    car.id = docRef.id;
+    cars.push(car);
+    render();
+  } catch (error) {
+    console.error('Error guardando carro:', error);
+    // Fallback a localStorage
+    cars.push(car);
+    localStorage.setItem('hotwheels_cars', JSON.stringify(cars));
+    render();
+  }
+}
 
 function render(){
   updateStats()
@@ -336,13 +402,10 @@ function addCarFromForm(){
     color: document.getElementById('color').value,
     photo_url: photoData,
     collection_type: document.getElementById('collection_type').value,
-    car_type: document.getElementById('car_type').value,
-    id: crypto.randomUUID()
+    car_type: document.getElementById('car_type').value
   }
   if(car.name){
-    cars.push(car)
-    localStorage.setItem('hotwheels_cars', JSON.stringify(cars))
-    render()
+    saveCar(car)
     hideForm()
     // Limpiar form
     document.getElementById('name').value = ''
@@ -389,7 +452,7 @@ function hideDetails() {
   document.getElementById('details').style.display = 'none';
 }
 
-render()
+loadCars()
 </script>
 
 </body>
